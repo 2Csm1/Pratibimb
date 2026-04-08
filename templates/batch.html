@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Attrition Forecast{% endblock %}
+{% block content %}
+<div class="animated-bg"></div>
+    <section class="teaser">
+        <div class="row">
+            <div class="col-sm-10 offset-sm-1">
+                <h1 class="gradient-text">Attrition Forecast</h1>
+                <p class="teaser-subtitle text-centered">Predict attrition for multiple employees at once.</p>
+            </div>
+        </div>
+        <div class="form-container">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="input-group">
+                    <label>Upload CSV for Attrition Forecast</label>
+                    <input type="file" name="batch_file" accept=".csv" required>
+                </div>
+                <button type="submit" class="btn">Predict</button>
+            </form>
+            {% if table %}
+                <div class="table-container">
+                    <h3>Prediction Results</h3>
+                    {{ table | safe }}
+                    {% if message %}
+                        <p class="table-note">{{ message }}</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

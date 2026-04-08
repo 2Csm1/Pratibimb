@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Historical Trends{% endblock %}
+{% block content %}
+<div class="animated-bg"></div>
+    <section class="teaser">
+        <div class="row">
+            <div class="col-sm-10 offset-sm-1">
+                <h1 class="gradient-text">Historical Trends Analysis</h1>
+                <p class="teaser-subtitle text-centered">Understand attrition patterns from historical data.</p>
+            </div>
+        </div>
+        <div class="form-container">
+            <form method="POST">
+                <button type="submit" class="btn">Analyze Historical Trends</button>
+            </form>
+            {% if trends %}
+                <div class="table-container" style="margin-top: 40px;">
+                    <h3 class="gradient-text">Historical Trends</h3>
+                    <p>Overall Attrition Rate: {{ "%.2f" % (trends.overall_attrition_rate * 100) }}%</p>
+                    <p>Total Employees: {{ trends.total_employees }}</p>
+                    <h4>Department Statistics</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Department</th>
+                                <th>Employee Count</th>
+                                <th>Attrition Rate</th>
+                                <th>Avg Salary</th>
+                                <th>Avg Tenure</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dept, stats in trends.department_statistics.items() %}
+                                <tr {% if dept in trends.high_risk_departments %}class="danger"{% endif %}>
+                                    <td>{{ dept }}</td>
+                                    <td>{{ stats.employee_count }}</td>
+                                    <td>{{ "%.2f" % (stats.attrition_rate * 100) }}%</td>
+                                    <td>${{ stats.avg_salary }}</td>
+                                    <td>{{ stats.avg_tenure }} years</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <h4>Role Trends (Top Attrition Rates)</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Job Role</th>
+                                <th>Attrition Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for role, rate in trends.role_trends.items() %}
+                                <tr>
+                                    <td>{{ role }}</td>
+                                    <td>{{ "%.2f" % (rate * 100) }}%</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

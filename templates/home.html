@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<div class="animated-bg"></div>
+    <section class="teaser">
+        <div class="row">
+            <div class="col-sm-10 offset-sm-1">
+                <h1 class="gradient-text">Employee Attrition Prediction</h1>
+                <p class="teaser-subtitle text-centered">Harness AI to predict employee turnover with precision.</p>
+            </div>
+        </div>
+        <div class="form-container">
+            <form method="POST">
+                <div class="input-group">
+                    <label>Select Model</label>
+                    <div class="custom-select">
+                        <select name="model" required>
+                            {% for model in models %}
+                                <option value="{{ model }}" {% if model == selected_model %}selected{% endif %}>
+                                    {{ model.upper() }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Age (18-60)</label>
+                    <input type="range" name="age" min="18" max="60" value="35" id="age" oninput="updateValue('age', this.value)">
+                    <span class="value-display" id="age-value">35</span>
+                </div>
+                <div class="input-group">
+                    <label>Monthly Income ($1000-$20000)</label>
+                    <input type="number" name="monthly_income" min="1000" max="20000" value="6500" required>
+                </div>
+                <div class="input-group">
+                    <label>Job Satisfaction (1-4)</label>
+                    <input type="range" name="job_satisfaction" min="1" max="4" value="4" id="job_satisfaction" oninput="updateValue('job_satisfaction', this.value)">
+                    <span class="value-display" id="job_satisfaction-value">4</span>
+                </div>
+                <div class="input-group">
+                    <label>OverTime</label>
+                    <div class="custom-select">
+                        <select name="overtime" required>
+                            <option value="No" selected>No</option>
+                            <option value="Yes">Yes</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Years at Company (0-40)</label>
+                    <input type="range" name="years_at_company" min="0" max="40" value="5" id="years_at_company" oninput="updateValue('years_at_company', this.value)">
+                    <span class="value-display" id="years_at_company-value">5</span>
+                </div>
+                <div class="input-group">
+                    <label>Work-Life Balance (1-4)</label>
+                    <input type="range" name="work_life_balance" min="1" max="4" value="3" id="work_life_balance" oninput="updateValue('work_life_balance', this.value)">
+                    <span class="value-display" id="work_life_balance-value">3</span>
+                </div>
+                <div class="input-group">
+                    <label>Job Level (1-5)</label>
+                    <input type="range" name="job_level" min="1" max="5" value="3" id="job_level" oninput="updateValue('job_level', this.value)">
+                    <span class="value-display" id="job_level-value">3</span>
+                </div>
+                <div class="input-group">
+                    <label>Distance from Home (1-29 km)</label>
+                    <input type="range" name="distance_from_home" min="1" max="29" value="7" id="distance_from_home" oninput="updateValue('distance_from_home', this.value)">
+                    <span class="value-display" id="distance_from_home-value">7</span>
+                </div>
+                <button type="submit" class="btn">Predict</button>
+            </form>
+            {% if prediction %}
+                <div class="prediction-result {% if '⚠️' in prediction %}danger{% else %}success{% endif %}">
+                    <h4>{{ prediction }}</h4>
+                </div>
+            {% endif %}
+            {% if time_window %}
+                <div class="table-container" style="margin-top: 40px;">
+                    <h3 class="gradient-text">Time Window Analysis</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time Window</th>
+                                <th>Risk Score</th>
+                                <th>Contributing Factors</th>
+                                <th>Impact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for window, data in time_window.items() %}
+                                <tr>
+                                    <td>{{ window.replace('_', ' ') }}</td>
+                                    <td>{{ "%.2f" % (data.risk_score * 100) }}%</td>
+                                    <td>{{ data.contributing_factors | join(', ') }}</td>
+                                    <td>{{ data.impact }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

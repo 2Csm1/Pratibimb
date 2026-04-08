@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Analysis{% endblock %}
+{% block content %}
+<div class="animated-bg"></div>
+    <section class="teaser">
+        <div class="row">
+            <div class="col-sm-10 offset-sm-1">
+                <h1 class="gradient-text">Data Analysis</h1>
+                <p class="teaser-subtitle text-centered">Visualize insights from your employee dataset, preprocess data manually, or view historical trends.</p>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <div class="flash-messages" style="margin: 20px 0;">
+                    {% for message in messages %}
+                        <p style="color: #ff4444;">{{ message }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="form-container">
+            <!-- Dataset Analysis Form -->
+            <form method="POST" enctype="multipart/form-data">
+                <div class="input-group">
+                    <label>Upload Dataset (CSV) for Visualization</label>
+                    <input type="file" name="dataset" accept=".csv">
+                </div>
+                <button type="submit" class="btn">Analyze Dataset</button>
+            </form>
+
+            <!-- Manual Preprocessing Form -->
+            <form method="POST" enctype="multipart/form-data" style="margin-top: 20px;">
+                <div class="input-group">
+                    <label>Upload Dataset (CSV) for Preprocessing</label>
+                    <input type="file" name="preprocess_file" accept=".csv">
+                </div>
+                <button type="submit" class="btn">Preprocess Dataset</button>
+            </form>
+            {% if preprocessed_file %}
+                <p style="margin-top: 10px;">Dataset preprocessed successfully!</p>
+                <a href="{{ url_for('download_file', filename=preprocessed_file | basename) }}" class="btn" style="background-color: #4CAF50; color: white;">Download Preprocessed Data</a>
+            {% endif %}
+
+            <!-- Graphs -->
+            {% if graphs %}
+                <div class="graphs-container" style="margin-top: 40px;">
+                    <h3 class="gradient-text">Visualizations</h3>
+                    {% for graph, annotation in graphs | zip(annotations) %}
+                        <div class="graph-item">
+                            {{ graph | safe }}
+                            <p>{{ annotation }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- Historical Trends (unchanged) -->
+            {% if trends %}
+                <div class="table-container" style="margin-top: 40px;">
+                    <h3 class="gradient-text">Historical Trends</h3>
+                    <p>Overall Attrition Rate: {{ "%.2f" % (trends.overall_attrition_rate * 100) }}%</p>
+                    <p>Total Employees: {{ trends.total_employees }}</p>
+                    <h4>Department Statistics</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Department</th>
+                                <th>Employee Count</th>
+                                <th>Attrition Rate</th>
+                                <th>Avg Salary</th>
+                                <th>Avg Tenure</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dept, stats in trends.department_statistics.items() %}
+                                <tr {% if dept in trends.high_risk_departments %}class="danger"{% endif %}>
+                                    <td>{{ dept }}</td>
+                                    <td>{{ stats.employee_count }}</td>
+                                    <td>{{ "%.2f" % (stats.attrition_rate * 100) }}%</td>
+                                    <td>${{ stats.avg_salary }}</td>
+                                    <td>{{ stats.avg_tenure }} years</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    <h4>Role Trends (Top Attrition Rates)</h4>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Job Role</th>
+                                <th>Attrition Rate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for role, rate in trends.role_trends.items() %}
+                                <tr>
+                                    <td>{{ role }}</td>
+                                    <td>{{ "%.2f" % (rate * 100) }}%</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

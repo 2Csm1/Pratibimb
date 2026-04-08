@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% endblock %} - Pratibimb</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=10">
+</head>
+<body>
+    <!-- Loading Spinner -->
+    <div class="loading-spinner">
+        <div class="spinner-pulse"></div>
+    </div>
+
+    <header class="site-header">
+        <div class="xai-container">
+            <div class="site-header-foreground">
+                <div class="site-header-logo">
+                    <a href="{{ url_for('main') }}" class="site-header-logo-link">
+                        <span class="animated-x-logo"></span>
+                    </a>
+                </div>
+                <nav class="site-header-main-nav">
+                    <a href="{{ url_for('home') }}" {% if request.endpoint == 'home' %}class="active"{% endif %}>Home</a>
+                    <a href="{{ url_for('analysis') }}" {% if request.endpoint == 'analysis' %}class="active"{% endif %}>Analysis</a>
+                    <a href="{{ url_for('batch') }}" {% if request.endpoint == 'batch' %}class="active"{% endif %}>Attrition Forecast</a>
+                    <a href="{{ url_for('comparison') }}" {% if request.endpoint == 'comparison' %}class="active"{% endif %}>Comparison</a>
+                    <a href="{{ url_for('retention_strategy') }}" {% if request.endpoint == 'retention_strategy' %}class="active"{% endif %}>Retention Strategy</a>
+                    <a href="{{ url_for('historical_trends') }}" {% if request.endpoint == 'historical_trends' %}class="active"{% endif %}>Historical Trends</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+    
+    <div class="xai-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </div>
+    
+    <script src="{{ url_for('static', filename='script.js') }}?v=10"></script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Retention Strategy{% endblock %}
+{% block content %}
+<div class="animated-bg"></div>
+    <section class="teaser">
+        <div class="row">
+            <div class="col-sm-10 offset-sm-1">
+                <h1 class="gradient-text">Retention Strategy</h1>
+                <p class="teaser-subtitle text-centered">Personalized strategies to retain your employees.</p>
+            </div>
+        </div>
+        <div class="form-container">
+            <form method="POST">
+                <div class="input-group">
+                    <label>Monthly Income ($1000-$20000)</label>
+                    <input type="number" name="monthly_income" min="1000" max="20000" value="6500" required>
+                </div>
+                <div class="input-group">
+                    <label>Job Satisfaction (1-4)</label>
+                    <input type="range" name="job_satisfaction" min="1" max="4" value="4" id="job_satisfaction" oninput="updateValue('job_satisfaction', this.value)">
+                    <span class="value-display" id="job_satisfaction-value">4</span>
+                </div>
+                <div class="input-group">
+                    <label>OverTime</label>
+                    <select name="overtime" required>
+                        <option value="No" selected>No</option>
+                        <option value="Yes">Yes</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Years at Company (0-40)</label>
+                    <input type="range" name="years_at_company" min="0" max="40" value="5" id="years_at_company" oninput="updateValue('years_at_company', this.value)">
+                    <span class="value-display" id="years_at_company-value">5</span>
+                </div>
+                <button type="submit" class="btn">Generate Strategy</button>
+            </form>
+            {% if strategy %}
+                <div class="table-container" style="margin-top: 40px;">
+                    <h3>Priority Level: <span class="{% if strategy.priority_level == 'high' %}danger{% elif strategy.priority_level == 'low' %}success{% endif %}">{{ strategy.priority_level | capitalize }}</span></h3>
+                    {% if strategy.immediate_actions %}
+                        <h4 class="gradient-text">Immediate Actions</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Reason</th>
+                                    <th>Impact</th>
+                                    <th>Timeframe</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for action in strategy.immediate_actions %}
+                                    <tr class="danger">
+                                        <td>{{ action.action }}</td>
+                                        <td>{{ action.reason }}</td>
+                                        <td>{{ action.impact }}</td>
+                                        <td>{{ action.timeframe }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                    {% if strategy.medium_term_actions %}
+                        <h4 class="gradient-text">Medium-Term Actions</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Reason</th>
+                                    <th>Impact</th>
+                                    <th>Timeframe</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for action in strategy.medium_term_actions %}
+                                    <tr>
+                                        <td>{{ action.action }}</td>
+                                        <td>{{ action.reason }}</td>
+                                        <td>{{ action.impact }}</td>
+                                        <td>{{ action.timeframe }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                    {% if strategy.long_term_actions %}
+                        <h4 class="gradient-text">Long-Term Actions</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Action</th>
+                                    <th>Reason</th>
+                                    <th>Impact</th>
+                                    <th>Timeframe</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for action in strategy.long_term_actions %}
+                                    <tr>
+                                        <td>{{ action.action }}</td>
+                                        <td>{{ action.reason }}</td>
+                                        <td>{{ action.impact }}</td>
+                                        <td>{{ action.timeframe }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}

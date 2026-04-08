@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Model Comparison{% endblock %}
+{% block content %}
+    <section class="teaser">
+        <div class="row" style="padding-top: 2rem;">
+            <div class="col-sm-10 offset-sm-1">
+                <h1 class="gradient-text">Model Comparison</h1>
+                <p class="teaser-subtitle text-centered">Compare the performance of different algorithms on the IBM HR dataset.</p>
+            </div>
+        </div>
+        
+        <!-- Best Model Highlight Section -->
+        <div class="best-model-showcase">
+            <div class="best-model-card">
+                <div class="ribbon"><span>Best Choice</span></div>
+                <h2>Top Performer: {{ best_model.upper() }}</h2>
+                <div class="metrics-grid">
+                    <div class="metric">
+                        <span class="metric-value">{{ "%.4f" % model_results[best_model]['accuracy'] }}</span>
+                        <span class="metric-label">Accuracy</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-value">{{ "%.4f" % model_results[best_model]['precision'] }}</span>
+                        <span class="metric-label">Precision</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-value">{{ "%.4f" % model_results[best_model]['recall'] }}</span>
+                        <span class="metric-label">Recall</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-value">{{ "%.4f" % model_results[best_model]['f1_score'] }}</span>
+                        <span class="metric-label">F1-Score</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-value">{{ "%.2f" % model_results[best_model]['training_time'] }}s</span>
+                        <span class="metric-label">Training Time</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- All Models Comparison Section -->
+        <div class="comparison-container">
+            <h2 class="section-title" id="all-models">All Models Comparison</h2>
+            
+            <div class="comparison-tabs">
+                <div class="tab-header">
+                    <button class="tab-button active" onclick="showMetric('accuracy')">Accuracy</button>
+                    <button class="tab-button" onclick="showMetric('precision')">Precision</button>
+                    <button class="tab-button" onclick="showMetric('recall')">Recall</button>
+                    <button class="tab-button" onclick="showMetric('f1')">F1-Score</button>
+                    <button class="tab-button" onclick="showMetric('time')">Training Time</button>
+                </div>
+                
+                <div class="tab-content">
+                    <!-- Accuracy Tab (Visible by Default) -->
+                    <div class="metric-chart" id="accuracy-chart">
+                        {% for model in ['rf', 'knn', 'lr', 'svm', 'xgb'] %}
+                        <div class="chart-row">
+                            <div class="chart-label">{{ model.upper() }}</div>
+                            <div class="chart-bar-container">
+                                <div class="chart-bar" style="width: {{ model_results[model]['accuracy'] * 100 }}%"></div>
+                                <span class="chart-value">{{ "%.4f" % model_results[model]['accuracy'] }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Precision Tab -->
+                    <div class="metric-chart" id="precision-chart" style="display: none;">
+                        {% for model in ['rf', 'knn', 'lr', 'svm', 'xgb'] %}
+                        <div class="chart-row">
+                            <div class="chart-label">{{ model.upper() }}</div>
+                            <div class="chart-bar-container">
+                                <div class="chart-bar" style="width: {{ model_results[model]['precision'] * 100 }}%"></div>
+                                <span class="chart-value">{{ "%.4f" % model_results[model]['precision'] }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Recall Tab -->
+                    <div class="metric-chart" id="recall-chart" style="display: none;">
+                        {% for model in ['rf', 'knn', 'lr', 'svm', 'xgb'] %}
+                        <div class="chart-row">
+                            <div class="chart-label">{{ model.upper() }}</div>
+                            <div class="chart-bar-container">
+                                <div class="chart-bar" style="width: {{ model_results[model]['recall'] * 100 }}%"></div>
+                                <span class="chart-value">{{ "%.4f" % model_results[model]['recall'] }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- F1-Score Tab -->
+                    <div class="metric-chart" id="f1-chart" style="display: none;">
+                        {% for model in ['rf', 'knn', 'lr', 'svm', 'xgb'] %}
+                        <div class="chart-row">
+                            <div class="chart-label">{{ model.upper() }}</div>
+                            <div class="chart-bar-container">
+                                <div class="chart-bar" style="width: {{ model_results[model]['f1_score'] * 100 }}%"></div>
+                                <span class="chart-value">{{ "%.4f" % model_results[model]['f1_score'] }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <!-- Training Time Tab -->
+                    <div class="metric-chart" id="time-chart" style="display: none;">
+                        {% for model in ['rf', 'knn', 'lr', 'svm', 'xgb'] %}
+                        {% set max_time = 10 %}  <!-- Assume 10 seconds is max for scaling -->
+                        {% set percent = (model_results[model]['training_time'] / max_time) * 100 %}
+                        {% set percent = [percent, 100] | min %}  <!-- Cap at 100% -->
+                        <div class="chart-row">
+                            <div class="chart-label">{{ model.upper() }}</div>
+                            <div class="chart-bar-container">
+                                <div class="chart-bar time-bar" style="width: {{ percent }}%"></div>
+                                <span class="chart-value">{{ "%.2f" % model_results[model]['training_time'] }}s</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Model Details Cards -->
+            <div class="model-cards">
+                {% for model, name in [('rf', 'Random Forest'), ('knn', 'KNN'), ('lr', 'Logistic Regression'), ('svm', 'SVM'), ('xgb', 'XGBoost')] %}
+                <div class="model-card">
+                    <h3>{{ name }}</h3>
+                    <table class="metrics-table">
+                        <tr>
+                            <td>Accuracy:</td>
+                            <td>{{ "%.4f" % model_results[model]['accuracy'] }}</td>
+                        </tr>
+                        <tr>
+                            <td>Precision:</td>
+                            <td>{{ "%.4f" % model_results[model]['precision'] }}</td>
+                        </tr>
+                        <tr>
+                            <td>Recall:</td>
+                            <td>{{ "%.4f" % model_results[model]['recall'] }}</td>
+                        </tr>
+                        <tr>
+                            <td>F1-Score:</td>
+                            <td>{{ "%.4f" % model_results[model]['f1_score'] }}</td>
+                        </tr>
+                        <tr>
+                            <td>Training Time:</td>
+                            <td>{{ "%.2f" % model_results[model]['training_time'] }}s</td>
+                        </tr>
+                    </table>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+    
+    <script>
+        function showMetric(metric) {
+            // Hide all charts
+            document.querySelectorAll('.metric-chart').forEach(chart => {
+                chart.style.display = 'none';
+            });
+            
+            // Show the selected chart
+            document.getElementById(metric + '-chart').style.display = 'block';
+            
+            // Update active button
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+        }
+        
+        // Set accuracy as default active tab when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelector('.tab-button').classList.add('active');
+            document.getElementById('accuracy-chart').style.display = 'block';
+        });
+    </script>
+{% endblock %}
