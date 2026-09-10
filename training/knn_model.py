@@ -1,3 +1,12 @@
+"""
+knn_model.py — Train and save the K-Nearest Neighbors attrition pipeline.
+"""
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import PREDICTION_FEATURES  # noqa: E402
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
@@ -5,44 +14,33 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 import joblib
 
-# Load dataset
-data = pd.read_csv(r'C:\python12\my projects\EmployeeAttritionProject\datasets\IBM-HR-Analytics-Employee-Attrition-and-Performance.csv')
+DATASET = os.path.join(
+    os.path.dirname(__file__), '..', 'datasets',
+    'IBM-HR-Analytics-Employee-Attrition-and-Performance.csv'
+)
+data = pd.read_csv(DATASET)
 
-
-# Select features and target
-features = ['Age', 'MonthlyIncome', 'JobSatisfaction', 'OverTime', 'YearsAtCompany',
-            'WorkLifeBalance', 'JobLevel', 'DistanceFromHome']
-X = data[features]
+X = data[PREDICTION_FEATURES].copy()
 y = data['Attrition']
 
-# Handle categorical variables
 le = LabelEncoder()
-X.loc[:, 'OverTime'] = le.fit_transform(X['OverTime'])
-y = le.fit_transform(y)  # Convert 'Yes'/'No' to 1/0
+X['OverTime'] = le.fit_transform(X['OverTime'])
+y = le.fit_transform(y)
 
-# Handle missing values
 imputer = SimpleImputer(strategy='mean')
 X = pd.DataFrame(imputer.fit_transform(X), columns=X.columns)
 
-# Scale numerical features
 scaler = StandardScaler()
 X = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
 
-# Split data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train model
-knn_model = KNeighborsClassifier(n_neighbors=5)  # Default k=5, adjust as needed
+knn_model = KNeighborsClassifier(n_neighbors=5)
 knn_model.fit(X_train, y_train)
 
-# Bundle model, scaler, and imputer into a dictionary
-pipeline = {
-    'model': knn_model,
-    'scaler': scaler,
-    'imputer': imputer
-}
+pipeline = {'model': knn_model, 'scaler': scaler, 'imputer': imputer}
 
-# Save the entire pipeline as a single .pkl file
-joblib.dump(pipeline, 'knn_pipeline.pkl')
-
-print("KNN pipeline saved as 'knn_pipeline.pkl'.")
+out = os.path.join(os.path.dirname(__file__), '..', 'models', 'knn_pipeline.pkl')
+joblib.dump(pipeline, out)
+print(f"KNN pipeline saved → {out}")
+print(f"n_features_in_: {knn_model.n_features_in_}")

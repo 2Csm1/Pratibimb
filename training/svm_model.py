@@ -1,3 +1,15 @@
+"""
+svm_model.py — Train and save the SVM attrition pipeline.
+
+Note: SVC with RBF kernel does not support predict_proba by default.
+probability=True is set here so the batch route can call predict_proba.
+"""
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from config import PREDICTION_FEATURES  # noqa: E402
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
@@ -5,44 +17,33 @@ from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.impute import SimpleImputer
 import joblib
 
-# Load dataset
-data = pd.read_csv(r'C:\python12\my projects\EmployeeAttritionProject\datasets\IBM-HR-Analytics-Employee-Attrition-and-Performance.csv')
+DATASET = os.path.join(
+    os.path.dirname(__file__), '..', 'datasets',
+    'IBM-HR-Analytics-Employee-Attrition-and-Performance.csv'
+)
+data = pd.read_csv(DATASET)
 
-
-# Select features and target
-features = ['Age', 'MonthlyIncome', 'JobSatisfaction', 'OverTime', 'YearsAtCompany',
-            'WorkLifeBalance', 'JobLevel', 'DistanceFromHome']
-X = data[features]
+X = data[PREDICTION_FEATURES].copy()
 y = data['Attrition']
 
-# Handle categorical variables
 le = LabelEncoder()
-X.loc[:, 'OverTime'] = le.fit_transform(X['OverTime'])
-y = le.fit_transform(y)  # Convert 'Yes'/'No' to 1/0
+X['OverTime'] = le.fit_transform(X['OverTime'])
+y = le.fit_transform(y)
 
-# Handle missing values
 imputer = SimpleImputer(strategy='mean')
 X = pd.DataFrame(imputer.fit_transform(X), columns=X.columns)
 
-# Scale numerical features
 scaler = StandardScaler()
 X = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
 
-# Split data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train model
-svm_model = SVC(kernel='rbf', random_state=42)  # RBF kernel by default, adjust as needed
+svm_model = SVC(kernel='rbf', probability=True, random_state=42)
 svm_model.fit(X_train, y_train)
 
-# Bundle model, scaler, and imputer into a dictionary
-pipeline = {
-    'model': svm_model,
-    'scaler': scaler,
-    'imputer': imputer
-}
+pipeline = {'model': svm_model, 'scaler': scaler, 'imputer': imputer}
 
-# Save the entire pipeline as a single .pkl file
-joblib.dump(pipeline, 'svm_pipeline.pkl')
-
-print("SVM pipeline saved as 'svm_pipeline.pkl'.")
+out = os.path.join(os.path.dirname(__file__), '..', 'models', 'svm_pipeline.pkl')
+joblib.dump(pipeline, out)
+print(f"SVM pipeline saved → {out}")
+print(f"n_features_in_: {svm_model.n_features_in_}")
