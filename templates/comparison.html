@@ -1,182 +1,262 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+
 {% block title %}Model Comparison{% endblock %}
+
 {% block content %}
-    <section class="teaser">
-        <div class="row" style="padding-top: 2rem;">
-            <div class="col-sm-10 offset-sm-1">
-                <h1 class="gradient-text">Model Comparison</h1>
-                <p class="teaser-subtitle text-centered">Compare the performance of different algorithms on the IBM HR dataset.</p>
+<style>
+.imbalance-banner {
+    background: linear-gradient(135deg, #1a237e, #283593);
+    color: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    margin: 1rem auto;
+    max-width: 900px;
+    text-align: center;
+    font-size: 0.95rem;
+}
+.baseline-row {
+    background-color: rgba(128, 128, 128, 0.15) !important;
+    font-style: italic;
+    opacity: 0.85;
+}
+.baseline-row td {
+    color: #999 !important;
+}
+.highlight-row {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.05)) !important;
+    font-weight: 600;
+}
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.85rem;
+}
+.comparison-table th {
+    background: rgba(255, 255, 255, 0.08);
+    padding: 0.75rem 0.6rem;
+    text-align: center;
+    font-weight: 600;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+    white-space: nowrap;
+}
+.comparison-table td {
+    padding: 0.6rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.comparison-table th:first-child,
+.comparison-table td:first-child {
+    text-align: left;
+}
+.pr-auc-col {
+    background: rgba(255, 215, 0, 0.08);
+    font-weight: 600;
+}
+.footnote {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 1rem;
+    line-height: 1.6;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+}
+.alert-box {
+    background: rgba(255, 152, 0, 0.15);
+    border: 1px solid rgba(255, 152, 0, 0.4);
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+    max-width: 600px;
+    margin: 3rem auto;
+    color: #ffb74d;
+}
+.eval-caption {
+    font-size: 0.75rem;
+    color: #666;
+    text-align: center;
+    margin-top: 2rem;
+}
+</style>
+
+<div class="teaser text-centered">
+    <h1 class="gradient-text">Model Comparison</h1>
+    <p class="teaser-subtitle">Evaluation results across multiple classifiers</p>
+</div>
+
+{% if not metrics %}
+<div class="alert-box">
+    Evaluation results not found. Please run <code>python train.py</code> to generate model metrics.
+</div>
+{% else %}
+<div class="imbalance-banner">
+    Dataset: {{ metrics.n_rows }} employees | Positive class (Attrition=Yes): {{ (metrics.prevalence * 100)|round(1) }}% | {{ metrics.n_features }} features
+</div>
+
+{% set best_data = metrics.models[metrics.best_model] %}
+<div class="best-model-showcase" style="max-width: 900px; margin: 2rem auto;">
+    <div class="best-model-card" style="position: relative; padding: 2rem; border-radius: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);">
+        <div class="ribbon" style="position: absolute; top: 0; right: 2rem; background: #4CAF50; color: white; padding: 0.5rem 1rem; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; font-weight: bold; font-size: 0.9rem;">TOP PERFORMER</div>
+        <h2 style="margin-top: 0;">{{ best_data.display_name }}</h2>
+        <div class="metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1.5rem;">
+            <div class="metric">
+                <div class="metric-value pr-auc-col" style="font-size: 1.5rem; color: #ffd700;">{{ '%.4f'|format(best_data.metrics.average_precision.mean) }} &plusmn; {{ '%.4f'|format(best_data.metrics.average_precision.std) }}</div>
+                <div class="metric-label">PR-AUC</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" style="font-size: 1.25rem;">{{ '%.4f'|format(best_data.metrics.roc_auc.mean) }}</div>
+                <div class="metric-label">ROC-AUC</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" style="font-size: 1.25rem;">{{ '%.4f'|format(best_data.metrics.f1.mean) }}</div>
+                <div class="metric-label">F1 Score</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" style="font-size: 1.25rem;">{{ '%.4f'|format(best_data.metrics.balanced_accuracy.mean) }}</div>
+                <div class="metric-label">Balanced Accuracy</div>
+            </div>
+            <div class="metric">
+                <div class="metric-value" style="font-size: 1.25rem;">{{ '%.4f'|format(best_data.metrics.matthews_corrcoef.mean) }}</div>
+                <div class="metric-label">MCC</div>
             </div>
         </div>
-        
-        <!-- Best Model Highlight Section -->
-        <div class="best-model-showcase">
-            <div class="best-model-card">
-                <div class="ribbon"><span>Best Choice</span></div>
-                <h2>Top Performer: {{ best_model.upper() }}</h2>
-                <div class="metrics-grid">
-                    <div class="metric">
-                        <span class="metric-value">{{ "%.4f" % model_results[best_model]['accuracy'] }}</span>
-                        <span class="metric-label">Accuracy</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-value">{{ "%.4f" % model_results[best_model]['precision'] }}</span>
-                        <span class="metric-label">Precision</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-value">{{ "%.4f" % model_results[best_model]['recall'] }}</span>
-                        <span class="metric-label">Recall</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-value">{{ "%.4f" % model_results[best_model]['f1_score'] }}</span>
-                        <span class="metric-label">F1-Score</span>
-                    </div>
-                    <div class="metric">
-                        <span class="metric-value">{{ "%.2f" % model_results[best_model]['training_time'] }}s</span>
-                        <span class="metric-label">Training Time</span>
-                    </div>
+    </div>
+</div>
+
+<div class="comparison-container" style="max-width: 1200px; margin: 0 auto; overflow-x: auto;">
+    <h2 class="section-title">Detailed Metrics Table</h2>
+    <table class="comparison-table metrics-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Model</th>
+                <th class="pr-auc-col">PR-AUC (mean&plusmn;std)</th>
+                <th>ROC-AUC</th>
+                <th>F1</th>
+                <th>Precision</th>
+                <th>Recall</th>
+                <th>Bal. Accuracy</th>
+                <th>MCC</th>
+                <th>Brier Score</th>
+                <th>Accuracy</th>
+                <th>Fit Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for name, data in metrics.models.items() if not data.is_baseline %}
+            <tr class="{% if name == metrics.best_model %}highlight-row{% endif %}">
+                <td>{{ data.rank }}</td>
+                <td>{{ data.display_name }}</td>
+                <td class="pr-auc-col">{{ '%.4f'|format(data.metrics.average_precision.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.average_precision.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.roc_auc.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.roc_auc.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.f1.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.f1.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.precision.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.precision.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.recall.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.recall.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.balanced_accuracy.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.balanced_accuracy.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.matthews_corrcoef.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.matthews_corrcoef.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.brier_score.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.brier_score.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.accuracy.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.accuracy.std) }}</td>
+                <td>{{ '%.3f'|format(data.metrics.fit_time.mean) }}s</td>
+            </tr>
+            {% endfor %}
+            {% for name, data in metrics.models.items() if data.is_baseline %}
+            <tr class="baseline-row">
+                <td>-</td>
+                <td>{{ data.display_name }} (Baseline)</td>
+                <td class="pr-auc-col">{{ '%.4f'|format(data.metrics.average_precision.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.average_precision.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.roc_auc.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.roc_auc.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.f1.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.f1.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.precision.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.precision.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.recall.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.recall.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.balanced_accuracy.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.balanced_accuracy.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.matthews_corrcoef.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.matthews_corrcoef.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.brier_score.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.brier_score.std) }}</td>
+                <td>{{ '%.4f'|format(data.metrics.accuracy.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.accuracy.std) }}</td>
+                <td>{{ '%.3f'|format(data.metrics.fit_time.mean) }}s</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="footnote">
+    <p>A model that predicts "Stay" for everyone scores ~84% accuracy on this dataset. PR-AUC (Precision-Recall Area Under Curve) is used as the headline metric because it is more informative than accuracy for imbalanced datasets.</p>
+    <p>All metrics are reported as mean &plusmn; standard deviation across 5-fold stratified cross-validation.</p>
+</div>
+
+<div class="comparison-container" style="max-width: 900px; margin: 3rem auto;">
+    <h2 class="section-title">Visual Comparison</h2>
+    <div class="comparison-tabs" style="margin-bottom: 2rem;">
+        <div class="tab-header" style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <button class="tab-button active" onclick="showMetric('average_precision')" style="padding: 0.5rem 1rem; border: none; background: rgba(255,255,255,0.1); color: white; border-radius: 4px; cursor: pointer;">PR-AUC</button>
+            <button class="tab-button" onclick="showMetric('roc_auc')" style="padding: 0.5rem 1rem; border: none; background: transparent; color: white; border-radius: 4px; cursor: pointer;">ROC-AUC</button>
+            <button class="tab-button" onclick="showMetric('f1')" style="padding: 0.5rem 1rem; border: none; background: transparent; color: white; border-radius: 4px; cursor: pointer;">F1</button>
+            <button class="tab-button" onclick="showMetric('recall')" style="padding: 0.5rem 1rem; border: none; background: transparent; color: white; border-radius: 4px; cursor: pointer;">Recall</button>
+            <button class="tab-button" onclick="showMetric('accuracy')" style="padding: 0.5rem 1rem; border: none; background: transparent; color: white; border-radius: 4px; cursor: pointer;">Accuracy</button>
+        </div>
+
+        {% set m_keys = ['average_precision', 'roc_auc', 'f1', 'recall', 'accuracy'] %}
+        {% for m in m_keys %}
+        <div id="tab-{{ m }}" class="tab-content metric-chart" style="display: {% if loop.first %}block{% else %}none{% endif %};">
+            {% for name, data in metrics.models.items() if not data.is_baseline %}
+            <div class="chart-row" style="display: flex; align-items: center; margin-bottom: 0.75rem; gap: 1rem;">
+                <div class="chart-label" style="width: 150px; text-align: right; font-size: 0.9rem;">{{ data.display_name }}</div>
+                <div class="chart-bar-container" style="flex: 1; background: rgba(255,255,255,0.05); height: 24px; border-radius: 12px; overflow: hidden; position: relative;">
+                    <div class="chart-bar" style="width: {{ (data.metrics[m].mean * 100)|round(1) }}%; height: 100%; background: linear-gradient(90deg, #3f51b5, #5c6bc0); border-radius: 12px;"></div>
                 </div>
+                <div class="chart-value" style="width: 60px; font-size: 0.9rem;">{{ '%.4f'|format(data.metrics[m].mean) }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="comparison-container" style="max-width: 1200px; margin: 3rem auto;">
+    <h2 class="section-title">Model Profiles</h2>
+    <div class="model-cards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+        {% for name, data in metrics.models.items() if not data.is_baseline %}
+        <div class="model-card" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 1.5rem;">
+            <h3 style="margin-top: 0; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); {% if name == metrics.best_model %}color: #4CAF50;{% endif %}">
+                {{ data.display_name }}
+                {% if name == metrics.best_model %}<span style="font-size: 0.75rem; vertical-align: middle; background: #4CAF50; color: white; padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.5rem;">BEST</span>{% endif %}
+            </h3>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem; margin-top: 1rem;">
+                <div><span style="color: #aaa; display: inline-block; width: 100px;">PR-AUC:</span> <strong style="color: #ffd700;">{{ '%.4f'|format(data.metrics.average_precision.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.average_precision.std) }}</strong></div>
+                <div><span style="color: #aaa; display: inline-block; width: 100px;">ROC-AUC:</span> <strong>{{ '%.4f'|format(data.metrics.roc_auc.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.roc_auc.std) }}</strong></div>
+                <div><span style="color: #aaa; display: inline-block; width: 100px;">F1 Score:</span> <strong>{{ '%.4f'|format(data.metrics.f1.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.f1.std) }}</strong></div>
+                <div><span style="color: #aaa; display: inline-block; width: 100px;">Bal. Acc:</span> <strong>{{ '%.4f'|format(data.metrics.balanced_accuracy.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.balanced_accuracy.std) }}</strong></div>
+                <div><span style="color: #aaa; display: inline-block; width: 100px;">Precision:</span> <strong>{{ '%.4f'|format(data.metrics.precision.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.precision.std) }}</strong></div>
+                <div><span style="color: #aaa; display: inline-block; width: 100px;">Recall:</span> <strong>{{ '%.4f'|format(data.metrics.recall.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.recall.std) }}</strong></div>
+                <div><span style="color: #aaa; display: inline-block; width: 100px;">MCC:</span> <strong>{{ '%.4f'|format(data.metrics.matthews_corrcoef.mean) }} &plusmn; {{ '%.4f'|format(data.metrics.matthews_corrcoef.std) }}</strong></div>
             </div>
         </div>
-        
-        <!-- All Models Comparison Section -->
-        <div class="comparison-container">
-            <h2 class="section-title" id="all-models">All Models Comparison</h2>
-            
-            <div class="comparison-tabs">
-                <div class="tab-header">
-                    <button class="tab-button active" onclick="showMetric('accuracy')">Accuracy</button>
-                    <button class="tab-button" onclick="showMetric('precision')">Precision</button>
-                    <button class="tab-button" onclick="showMetric('recall')">Recall</button>
-                    <button class="tab-button" onclick="showMetric('f1')">F1-Score</button>
-                    <button class="tab-button" onclick="showMetric('time')">Training Time</button>
-                </div>
-                
-                <div class="tab-content">
-                    <!-- Accuracy Tab (Visible by Default) -->
-                    <div class="metric-chart" id="accuracy-chart">
-                        {% for model in ['rf', 'knn', 'lr', 'svm', 'xgb'] %}
-                        <div class="chart-row">
-                            <div class="chart-label">{{ model.upper() }}</div>
-                            <div class="chart-bar-container">
-                                <div class="chart-bar" style="width: {{ model_results[model]['accuracy'] * 100 }}%"></div>
-                                <span class="chart-value">{{ "%.4f" % model_results[model]['accuracy'] }}</span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    
-                    <!-- Precision Tab -->
-                    <div class="metric-chart" id="precision-chart" style="display: none;">
-                        {% for model in ['rf', 'knn', 'lr', 'svm', 'xgb'] %}
-                        <div class="chart-row">
-                            <div class="chart-label">{{ model.upper() }}</div>
-                            <div class="chart-bar-container">
-                                <div class="chart-bar" style="width: {{ model_results[model]['precision'] * 100 }}%"></div>
-                                <span class="chart-value">{{ "%.4f" % model_results[model]['precision'] }}</span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    
-                    <!-- Recall Tab -->
-                    <div class="metric-chart" id="recall-chart" style="display: none;">
-                        {% for model in ['rf', 'knn', 'lr', 'svm', 'xgb'] %}
-                        <div class="chart-row">
-                            <div class="chart-label">{{ model.upper() }}</div>
-                            <div class="chart-bar-container">
-                                <div class="chart-bar" style="width: {{ model_results[model]['recall'] * 100 }}%"></div>
-                                <span class="chart-value">{{ "%.4f" % model_results[model]['recall'] }}</span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    
-                    <!-- F1-Score Tab -->
-                    <div class="metric-chart" id="f1-chart" style="display: none;">
-                        {% for model in ['rf', 'knn', 'lr', 'svm', 'xgb'] %}
-                        <div class="chart-row">
-                            <div class="chart-label">{{ model.upper() }}</div>
-                            <div class="chart-bar-container">
-                                <div class="chart-bar" style="width: {{ model_results[model]['f1_score'] * 100 }}%"></div>
-                                <span class="chart-value">{{ "%.4f" % model_results[model]['f1_score'] }}</span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    
-                    <!-- Training Time Tab -->
-                    <div class="metric-chart" id="time-chart" style="display: none;">
-                        {% for model in ['rf', 'knn', 'lr', 'svm', 'xgb'] %}
-                        {% set max_time = 10 %}  <!-- Assume 10 seconds is max for scaling -->
-                        {% set percent = (model_results[model]['training_time'] / max_time) * 100 %}
-                        {% set percent = [percent, 100] | min %}  <!-- Cap at 100% -->
-                        <div class="chart-row">
-                            <div class="chart-label">{{ model.upper() }}</div>
-                            <div class="chart-bar-container">
-                                <div class="chart-bar time-bar" style="width: {{ percent }}%"></div>
-                                <span class="chart-value">{{ "%.2f" % model_results[model]['training_time'] }}s</span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Model Details Cards -->
-            <div class="model-cards">
-                {% for model, name in [('rf', 'Random Forest'), ('knn', 'KNN'), ('lr', 'Logistic Regression'), ('svm', 'SVM'), ('xgb', 'XGBoost')] %}
-                <div class="model-card">
-                    <h3>{{ name }}</h3>
-                    <table class="metrics-table">
-                        <tr>
-                            <td>Accuracy:</td>
-                            <td>{{ "%.4f" % model_results[model]['accuracy'] }}</td>
-                        </tr>
-                        <tr>
-                            <td>Precision:</td>
-                            <td>{{ "%.4f" % model_results[model]['precision'] }}</td>
-                        </tr>
-                        <tr>
-                            <td>Recall:</td>
-                            <td>{{ "%.4f" % model_results[model]['recall'] }}</td>
-                        </tr>
-                        <tr>
-                            <td>F1-Score:</td>
-                            <td>{{ "%.4f" % model_results[model]['f1_score'] }}</td>
-                        </tr>
-                        <tr>
-                            <td>Training Time:</td>
-                            <td>{{ "%.2f" % model_results[model]['training_time'] }}s</td>
-                        </tr>
-                    </table>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </section>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="eval-caption">
+    Evaluated on {{ metrics.timestamp[:10] }} | scikit-learn {{ metrics.sklearn_version }}
+</div>
+
+<script>
+function showMetric(metric) {
+    // Hide all tabs
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
     
-    <script>
-        function showMetric(metric) {
-            // Hide all charts
-            document.querySelectorAll('.metric-chart').forEach(chart => {
-                chart.style.display = 'none';
-            });
-            
-            // Show the selected chart
-            document.getElementById(metric + '-chart').style.display = 'block';
-            
-            // Update active button
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.currentTarget.classList.add('active');
-        }
-        
-        // Set accuracy as default active tab when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelector('.tab-button').classList.add('active');
-            document.getElementById('accuracy-chart').style.display = 'block';
-        });
-    </script>
+    // Show selected tab
+    document.getElementById('tab-' + metric).style.display = 'block';
+    
+    // Update active button state
+    document.querySelectorAll('.tab-button').forEach(btn => {
+        btn.classList.remove('active');
+        btn.style.background = 'transparent';
+    });
+    const clickedBtn = event.currentTarget;
+    clickedBtn.classList.add('active');
+    clickedBtn.style.background = 'rgba(255,255,255,0.1)';
+}
+</script>
+{% endif %}
 {% endblock %}

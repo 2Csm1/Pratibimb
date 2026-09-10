@@ -13,3 +13,4 @@ xgboost==2.1.4
 matplotlib==3.7.2
 seaborn==0.12.2
 gunicorn==22.0.0
+imbalanced-learn>=0.13.0
