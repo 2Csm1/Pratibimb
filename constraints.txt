@@ -1,0 +1,39 @@
+# constraints.txt — Pinned transitive dependency graph
+# Generated from venv: pip freeze (scikit-learn 1.5.2 environment)
+# Usage: pip install -c constraints.txt -r requirements.txt
+#
+# This file locks every transitive dep so Render gets the exact same package
+# graph on every deploy. Regenerate after any requirements.txt change:
+#   pip install -r requirements.txt && pip freeze > constraints.txt
+
+blinker==1.9.0
+click==8.1.8
+colorama==0.4.6
+contourpy==1.3.1
+cycler==0.12.1
+Flask==3.1.0
+fonttools==4.55.8
+gunicorn==22.0.0
+itsdangerous==2.2.0
+Jinja2==3.1.5
+joblib==1.4.2
+kiwisolver==1.4.7
+MarkupSafe==3.0.2
+matplotlib==3.7.2
+narwhals==1.23.0
+numpy==2.2.3
+packaging==24.2
+pandas==2.2.3
+pillow==11.1.0
+plotly==6.0.0
+pyparsing==3.2.1
+python-dateutil==2.9.0.post0
+pytz==2024.2
+scikit-learn==1.5.2
+scipy==1.15.2
+seaborn==0.12.2
+six==1.17.0
+threadpoolctl==3.5.0
+tzdata==2024.2
+werkzeug==3.1.3
+xgboost==2.1.4
