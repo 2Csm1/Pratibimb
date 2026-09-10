@@ -12,14 +12,40 @@
         <div class="form-container">
             <form method="POST" enctype="multipart/form-data">
                 <div class="input-group">
+                    <label>Select Model</label>
+                    <div class="custom-select">
+                        <select name="model" required>
+                            {% for model in models %}
+                                <option value="{{ model }}" {% if model == selected_model %}selected{% endif %}>
+                                    {{ model_names[model] }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <p style="font-size:0.82rem; color: var(--text-muted, #888); margin-top: 6px;">
+                        All models use the same 8 features. Different models may produce different risk probabilities.
+                    </p>
+                </div>
+                <div class="input-group">
                     <label>Upload CSV for Attrition Forecast</label>
                     <input type="file" name="batch_file" accept=".csv" required>
+                    <p style="font-size:0.82rem; color: var(--text-muted, #888); margin-top: 6px;">
+                        Required columns: Age, MonthlyIncome, JobSatisfaction, OverTime,
+                        YearsAtCompany, WorkLifeBalance, JobLevel, DistanceFromHome.
+                        Max file size: 10 MB.
+                    </p>
                 </div>
                 <button type="submit" class="btn">Predict</button>
             </form>
             {% if table %}
                 <div class="table-container">
-                    <h3>Prediction Results</h3>
+                    <h3>Prediction Results
+                        {% if model_label %}
+                            <span style="font-size:0.85rem; font-weight:400; color: var(--text-muted, #888);">
+                                — {{ model_label }}
+                            </span>
+                        {% endif %}
+                    </h3>
                     {{ table | safe }}
                     {% if message %}
                         <p class="table-note">{{ message }}</p>
