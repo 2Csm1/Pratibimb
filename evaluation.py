@@ -164,3 +164,87 @@ def evaluate_all(X, y, seed=42):
             results[name]['rank'] = None
             
     return results
+
+
+def assess_calibration(pipeline_dict, X, y, seed=42):
+    """Assess probability calibration via out-of-fold predictions.
+
+    Parameters
+    ----------
+    pipeline_dict : dict with keys 'imputer', 'scaler', 'model'
+        A *fitted* pipeline dict (same format as our .pkl files).
+        NOTE: we do NOT use the fitted weights — we re-fit inside each
+        CV fold to get honest out-of-fold probabilities.
+    X : array-like, shape (n_samples, n_features)
+    y : array-like, shape (n_samples,)
+    seed : int
+
+    Returns
+    -------
+    dict with keys:
+        brier_score        : float
+        ece                : float  (Expected Calibration Error)
+        bin_edges          : list[float]  (n_bins + 1 edges)
+        fraction_of_positives : list[float]
+        mean_predicted_value  : list[float]
+        bin_counts         : list[int]
+    """
+    from sklearn.calibration import calibration_curve
+    from sklearn.model_selection import cross_val_predict
+    from sklearn.base import clone
+    import copy
+
+    X_arr = np.asarray(X, dtype=float)
+    y_arr = np.asarray(y, dtype=int)
+
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
+    oof_probs = np.zeros(len(y_arr))
+
+    for train_idx, test_idx in skf.split(X_arr, y_arr):
+        X_train, X_test = X_arr[train_idx], X_arr[test_idx]
+        y_train = y_arr[train_idx]
+
+        # Build fresh copies of preprocessing + model
+        imp = SimpleImputer(strategy='mean')
+        scl = StandardScaler()
+        mdl = clone(pipeline_dict['model'])
+
+        X_tr = scl.fit_transform(imp.fit_transform(X_train))
+        X_te = scl.transform(imp.transform(X_test))
+        mdl.fit(X_tr, y_train)
+
+        if hasattr(mdl, 'predict_proba'):
+            oof_probs[test_idx] = mdl.predict_proba(X_te)[:, 1]
+        else:
+            oof_probs[test_idx] = mdl.decision_function(X_te)
+
+    # Brier score
+    brier = float(brier_score_loss(y_arr, oof_probs))
+
+    # Calibration curve (quantile strategy → equal-sized bins)
+    n_bins = 10
+    frac_pos, mean_pred = calibration_curve(
+        y_arr, oof_probs, n_bins=n_bins, strategy='quantile'
+    )
+
+    # Expected Calibration Error
+    # Bin the predictions to get counts
+    bin_edges = np.quantile(oof_probs, np.linspace(0, 1, n_bins + 1))
+    bin_indices = np.digitize(oof_probs, bin_edges[1:-1])  # 0..n_bins-1
+    bin_counts = []
+    for b in range(n_bins):
+        bin_counts.append(int(np.sum(bin_indices == b)))
+
+    n = len(y_arr)
+    ece = 0.0
+    for i in range(len(frac_pos)):
+        count = bin_counts[i] if i < len(bin_counts) else 0
+        ece += (count / n) * abs(mean_pred[i] - frac_pos[i])
+
+    return {
+        'brier_score': brier,
+        'ece': float(ece),
+        'fraction_of_positives': frac_pos.tolist(),
+        'mean_predicted_value': mean_pred.tolist(),
+        'bin_counts': bin_counts,
+    }

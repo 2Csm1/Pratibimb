@@ -73,6 +73,35 @@
                     <h4>{{ prediction }}</h4>
                 </div>
             {% endif %}
+            {% if threshold_info %}
+                <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 1.2rem 1.5rem; margin-top: 1rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                    <h4 style="margin-top: 0; font-size: 0.95rem; color: #aaa;">Cost-Optimal Threshold Analysis</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; text-align: center;">
+                        <div>
+                            <div style="font-size: 1.4rem; font-weight: 700; color: {% if threshold_info.crosses %}#ff6b6b{% else %}#4CAF50{% endif %};">{{ threshold_info.prob_pct if threshold_info.prob_pct is not none else 'N/A' }}%</div>
+                            <div style="font-size: 0.75rem; color: #888;">Model Risk</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.4rem; font-weight: 700; color: #ffd700;">{{ threshold_info.threshold_pct }}%</div>
+                            <div style="font-size: 0.75rem; color: #888;">Threshold</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.4rem; font-weight: 700;">
+                                {% if threshold_info.crosses %}
+                                    <span style="color: #ff6b6b;">⬆ INTERVENE</span>
+                                {% else %}
+                                    <span style="color: #4CAF50;">✓ Monitor</span>
+                                {% endif %}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #888;">Decision</div>
+                        </div>
+                    </div>
+                    <p style="font-size: 0.7rem; color: #666; margin-top: 0.8rem; margin-bottom: 0;">
+                        Threshold = $1,000 intervention cost ÷ ({{ "%.0f"|format(threshold_info.monthly_income) }} × 12 × 50% replacement × 30% success).
+                        Intervene when risk ≥ {{ threshold_info.threshold_pct }}%.
+                    </p>
+                </div>
+            {% endif %}
             {% if time_window %}
                 <div class="table-container" style="margin-top: 40px;">
                     <h3 class="gradient-text">Time Window Analysis</h3>

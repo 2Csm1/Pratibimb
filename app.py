@@ -26,6 +26,7 @@ from config import (
     REQUIRED_PREDICTION_COLS,
     REQUIRED_PREPROCESS_COLS,
 )
+from costs import optimal_threshold as _optimal_threshold
 
 # ── App setup ─────────────────────────────────────────────────────────────────
 app = Flask(__name__)
@@ -379,25 +380,55 @@ def home():
             )
             prediction = pipeline['model'].predict(input_processed)[0]
 
+            prob = None
+            risk_percentage = "Not available"
             if hasattr(pipeline['model'], 'predict_proba'):
                 try:
                     prob = pipeline['model'].predict_proba(input_processed)[0][1]
                     risk_percentage = f"{prob * 100:.1f}%"
                 except Exception as e:
                     logger.error(f"Error calculating probability: {e}")
-                    risk_percentage = "Not available"
             else:
                 risk_percentage = "Not supported by this model"
 
-            if prediction == 1:
-                result = f"⚠️ Employee is expected to leave. Risk: {risk_percentage} (Model: {selected_model.upper()})"
+            # Cost-optimal threshold for this employee's salary
+            monthly_income = float(input_data['MonthlyIncome'])
+            threshold = _optimal_threshold(monthly_income)
+            crosses_threshold = prob is not None and prob >= threshold
+
+            threshold_info = {
+                'threshold': round(threshold, 4),
+                'threshold_pct': round(threshold * 100, 1),
+                'prob': round(prob, 4) if prob is not None else None,
+                'prob_pct': round(prob * 100, 1) if prob is not None else None,
+                'crosses': crosses_threshold,
+                'monthly_income': monthly_income,
+            }
+
+            if crosses_threshold:
+                result = (
+                    f"⚠️ Employee CROSSES the cost-optimal threshold. "
+                    f"Risk: {risk_percentage} (threshold: {threshold_info['threshold_pct']}%) "
+                    f"— intervention recommended. (Model: {selected_model.upper()})"
+                )
+            elif prediction == 1:
+                result = (
+                    f"⚠️ Employee predicted to leave, but below cost threshold. "
+                    f"Risk: {risk_percentage} (threshold: {threshold_info['threshold_pct']}%) "
+                    f"(Model: {selected_model.upper()})"
+                )
             else:
-                result = f"✅ Employee is expected to stay. Risk: {risk_percentage} (Model: {selected_model.upper()})"
+                result = (
+                    f"✅ Employee is expected to stay. Risk: {risk_percentage} "
+                    f"(threshold: {threshold_info['threshold_pct']}%) "
+                    f"(Model: {selected_model.upper()})"
+                )
 
             time_window_result = predict_time_window(input_data)
             return render_template(
                 'home.html',
                 prediction=result,
+                threshold_info=threshold_info,
                 time_window=time_window_result,
                 models=AVAILABLE_MODELS,
                 model_names=MODEL_DISPLAY_NAMES,
@@ -648,10 +679,27 @@ def batch():
             predictions = pipeline['model'].predict(input_processed)
             probs = pipeline['model'].predict_proba(input_processed)[:, 1]
 
-            risk_levels = ['High' if p >= 0.7 else 'Medium' if p >= 0.3 else 'Low' for p in probs]
+            # Per-employee cost-optimal thresholds from MonthlyIncome
+            incomes = data['MonthlyIncome'].values
+            thresholds = np.array([_optimal_threshold(inc) for inc in incomes])
+
+            # Risk levels derived from cost model, not arbitrary bands
+            #   High   = p >= 2 × threshold  (far above intervention point)
+            #   Medium = p >= threshold       (at or above intervention point)
+            #   Low    = p <  threshold       (below intervention point)
+            risk_levels = []
+            for p, t in zip(probs, thresholds):
+                if p >= t * 2:
+                    risk_levels.append('High')
+                elif p >= t:
+                    risk_levels.append('Medium')
+                else:
+                    risk_levels.append('Low')
+
             n = len(display_df)
             display_df['Risk']       = risk_levels[:n]
             display_df['Risk %']     = (probs[:n] * 100).round(1)
+            display_df['Threshold %'] = (thresholds[:n] * 100).round(1)
             display_df['Prediction'] = ['Leave' if p == 1 else 'Stay' for p in predictions[:n]]
 
             def style_row(row):
@@ -662,7 +710,7 @@ def batch():
                     c = '#99ff99'
                 return [f'background-color: {c}' for _ in row]
 
-            cols = PREDICTION_FEATURES + ['Risk', 'Risk %', 'Prediction']
+            cols = PREDICTION_FEATURES + ['Risk', 'Risk %', 'Threshold %', 'Prediction']
             styled_df = display_df[cols].style.apply(style_row, axis=1).to_html()
             message = (
                 f"Showing first {MAX_DISPLAY_ROWS} of {len(data)} employees."
